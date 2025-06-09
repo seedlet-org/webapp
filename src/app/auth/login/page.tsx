@@ -80,7 +80,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-sm text-center text-muted-foreground mt-4">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a href="/auth/signup" className="underline text-primary">Sign up</a>
           </p>
 
