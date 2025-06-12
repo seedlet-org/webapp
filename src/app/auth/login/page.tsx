@@ -43,7 +43,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-foreground px-4">
-      <Card className="w-full max-w-sm rounded-2xl shadow-xl border border-border">
+      <Card className="w-full max-w-sm rounded-2xl shadow-xl">
         <CardHeader className="flex items-center justify-center pt-6">
           <Image src="/seedlet.png" alt="Logo" width={60} height={60} />
         </CardHeader>
