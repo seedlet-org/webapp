@@ -1,20 +1,20 @@
-'use client'
+"use client";
 
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useState } from 'react'
-import Image from 'next/image'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Mail } from 'lucide-react'
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
+import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Mail } from "lucide-react";
 
 const formSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
-})
+  email: z.string().email("Please enter a valid email"),
+});
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 export default function ForgotPasswordPage() {
   const {
@@ -24,32 +24,32 @@ export default function ForgotPasswordPage() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      email: "",
     },
-  })
+  });
 
-  const [otpSent, setOtpSent] = useState(false)
-  const [otp, setOtp] = useState('')
-  const [email, setEmail] = useState('')
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
 
   const onSubmit = (data: FormData) => {
-    console.log('Sending OTP to:', data.email)
-    localStorage.setItem('forgotPasswordData', JSON.stringify(data))
-    setEmail(data.email)
-    setOtpSent(true)
-  }
+    console.log("Sending OTP to:", data.email);
+    localStorage.setItem("forgotPasswordData", JSON.stringify(data));
+    setEmail(data.email);
+    setOtpSent(true);
+  };
 
   const handleVerifyOtp = () => {
-    console.log('Verifying OTP:', otp)
-  }
+    console.log("Verifying OTP:", otp);
+  };
 
   const handleResendOtp = () => {
-    console.log('Resending OTP to:', email)
-  }
+    console.log("Resending OTP to:", email);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-foreground px-4">
-      <Card className="w-full max-w-sm rounded-2xl shadow-xl border border-border">
+      <Card className="w-full max-w-sm rounded-2xl shadow-xl">
         <CardHeader className="flex items-center justify-center pt-6">
           <Image src="/seedlet.png" alt="Logo" width={60} height={60} />
         </CardHeader>
@@ -64,16 +64,9 @@ export default function ForgotPasswordPage() {
                 <div>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      {...register('email')}
-                      className="pl-10"
-                    />
+                    <Input type="email" placeholder="Enter your email" {...register("email")} className="pl-10" />
                   </div>
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-                  )}
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
                 {/* Submit Button */}
@@ -83,7 +76,7 @@ export default function ForgotPasswordPage() {
               </form>
 
               <p className="text-sm text-center text-muted-foreground mt-4">
-                Back to{' '}
+                Back to{" "}
                 <a href="/auth/login" className="underline text-primary">
                   login
                 </a>
@@ -99,13 +92,13 @@ export default function ForgotPasswordPage() {
                   placeholder="Enter OTP"
                   value={otp}
                   onChange={(e) => {
-                    const value = e.target.value
+                    const value = e.target.value;
                     if (/^\d{0,6}$/.test(value)) {
-                      setOtp(value)
+                      setOtp(value);
                     }
                   }}
                   maxLength={6}
-                  inputMode='numeric'
+                  inputMode="numeric"
                   pattern="\d*"
                 />
 
@@ -114,27 +107,23 @@ export default function ForgotPasswordPage() {
                   Verify OTP
                 </Button>
                 <p className="text-sm text-center text-muted-foreground mt-2">
-                  Didn’t get the code?{' '}
-                  <button
-                    onClick={handleResendOtp}
-                    className="text-primary underline cursor-pointer"
-                    type="button"
-                  >
+                  Didn’t get the code?{" "}
+                  <button onClick={handleResendOtp} className="text-primary underline cursor-pointer" type="button">
                     Resend OTP
                   </button>
                 </p>
 
                 <p className="text-xs text-center text-muted-foreground mt-4">
-                Back to{' '}
-                <a href="/auth/forgotPassword" className="underline text-primary">
-                  Forgot password
-                </a>
-              </p>
+                  Back to{" "}
+                  <a href="/auth/forgotPassword" className="underline text-primary">
+                    Forgot password
+                  </a>
+                </p>
               </div>
             </>
           )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
