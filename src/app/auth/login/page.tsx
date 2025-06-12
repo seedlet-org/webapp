@@ -10,7 +10,14 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Mail, Lock } from "lucide-react";
 
 const formSchema = z.object({
-  usernameOrEmail: z.string().email("Please enter a username or email"),
+  usernameOrEmail: z
+    .string()
+    .min(1, "Username or email is required")
+    .refine((value) => {
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      const isUsername = /^[a-zA-Z0-9_]{3,}$/.test(value);
+      return isEmail || isUsername;
+    }, "Please enter a valid username or email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -49,7 +56,7 @@ export default function LoginPage() {
             <div>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type="email" placeholder="Username/Email" {...register("usernameOrEmail")} className="pl-10" />
+                <Input type="text" placeholder="Username/Email" {...register("usernameOrEmail")} className="pl-10" />
               </div>
               {errors.usernameOrEmail && <p className="text-red-500 text-xs mt-1">{errors.usernameOrEmail.message}</p>}
             </div>
