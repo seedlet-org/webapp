@@ -14,7 +14,7 @@ export default function DashboardPage() {
     if (!token) {
       router.push("/auth/login");
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-white text-[#333] px-6 py-8 font-manrope">
@@ -46,7 +46,7 @@ export default function DashboardPage() {
             <ClipboardList className="text-[#42B883]" />
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-[#4F4F4F]">You're collaborating on 3 Labs. Stay active and sync with your team.</p>
+            <p className="text-sm text-[#4F4F4F]">You&apos;re collaborating on 3 Labs. Stay active and sync with your team.</p>
             <Button variant="outline" className="cursor-pointer mt-4 w-full" onClick={() => router.push("/labs")}>
               View All Labs
             </Button>

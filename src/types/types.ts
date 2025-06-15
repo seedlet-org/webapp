@@ -31,7 +31,7 @@ export type AuthResponse = {
 
 export type FailedRequest = {
     resolve: (token: string | null) => void;
-    reject: (error: any) => void;
+    reject: (error: unknown) => void;
 };
 
 export type RefreshPayload = {
