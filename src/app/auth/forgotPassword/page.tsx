@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Mail } from "lucide-react";
+import Link from "next/link";
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -77,9 +78,9 @@ export default function ForgotPasswordPage() {
 
               <p className="text-sm text-center text-muted-foreground mt-4">
                 Back to{" "}
-                <a href="/auth/login" className="underline text-primary">
+                <Link href="/auth/login" className="underline text-primary">
                   login
-                </a>
+                </Link>
               </p>
             </>
           ) : (
@@ -115,9 +116,9 @@ export default function ForgotPasswordPage() {
 
                 <p className="text-xs text-center text-muted-foreground mt-4">
                   Back to{" "}
-                  <a href="/auth/forgotPassword" className="underline text-primary">
+                  <Link href="/auth/forgotPassword" className="underline text-primary">
                     Forgot password
-                  </a>
+                  </Link>
                 </p>
               </div>
             </>

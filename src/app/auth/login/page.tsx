@@ -7,10 +7,15 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { LoginPayload, APIError } from "@/types/types";
+import { useLogin } from "@/features/auth/hooks/useAuth";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
-  usernameOrEmail: z
+  userid: z
     .string()
     .min(1, "Username or email is required")
     .refine((value) => {
@@ -23,7 +28,11 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function LoginPage() {
+export default function LoginPage() { 
+  const [showPassword, setShowPassword] = useState(false);
+  const { mutate, isPending} = useLogin();
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -31,14 +40,24 @@ export default function LoginPage() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      usernameOrEmail: "",
+      userid: "",
       password: "",
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log(data);
-    localStorage.setItem("loginData", JSON.stringify(data));
+  const onSubmit = (data: LoginPayload) => {
+    mutate(data, {
+      onSuccess: (response) => {
+        console.log("Logged in: ", response);
+        localStorage.setItem("token", response.token);
+        localStorage.setItem("refreshToken", response.refreshToken);
+        router.push("/Protected/dashboard");
+      },
+      onError: (err: APIError) => {
+        const errorMessage = err?.message || "Something went wrong";
+        console.error("Login error: ", errorMessage)
+      },
+    });
   };
 
   return (
@@ -56,37 +75,45 @@ export default function LoginPage() {
             <div>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type="text" placeholder="Username/Email" {...register("usernameOrEmail")} className="pl-10" />
+                <Input type="text" placeholder="Username/Email" {...register("userid")} className="pl-10" />
               </div>
-              {errors.usernameOrEmail && <p className="text-red-500 text-xs mt-1">{errors.usernameOrEmail.message}</p>}
+              {errors.userid && <p className="text-red-500 text-xs mt-1">{errors.userid.message}</p>}
             </div>
 
             {/* Password */}
             <div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type="password" placeholder="Password" {...register("password")} className="pl-10" />
+                <Input type={showPassword ? "text" : "password"}  placeholder="Password" {...register("password")} className="pl-10 pr-10" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full cursor-pointer">
-              Log in
+            <Button type="submit" className="w-full cursor-pointer" disabled={isPending}>
+              {isPending ? "Logging in..." : "Login"}
             </Button>
           </form>
 
           <p className="text-sm text-center text-muted-foreground mt-4">
             Don&apos;t have an account?{" "}
-            <a href="/auth/signup" className="underline text-primary">
+            <Link href="/auth/signup" className="underline text-primary">
               Sign up
-            </a>
+            </Link>
           </p>
 
           <p className="text-xs text-center text-muted-foreground mt-4">
-            <a href="/auth/forgotPassword" className="underline text-primary">
+            <Link href="/auth/forgotPassword" className="underline text-primary">
               Forgot your password?
-            </a>
+            </Link>
           </p>
         </CardContent>
       </Card>
