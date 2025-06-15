@@ -18,20 +18,21 @@ export type RegisterPayload = {
 };
 
 export type AuthResponse = {
-  token: string;
-  refreshToken: string;
-  user: {
-    id: string;
+  statuscode: number;
+  message: string;
+  data: {
+    access_token: string;
     email: string;
     username: string;
     firstname: string;
     lastname: string;
+    profileUpdated: boolean;
   };
 };
 
 export type FailedRequest = {
-    resolve: (token: string | null) => void;
-    reject: (error: unknown) => void;
+  resolve: (token: string | null) => void;
+  reject: (error: unknown) => void;
 };
 
 export type RefreshPayload = {

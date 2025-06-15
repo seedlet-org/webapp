@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { LoginPayload, APIError } from "@/types/types";
+import { LoginPayload } from "@/types/types";
 import { useLogin } from "@/features/auth/hooks/useAuth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 const formSchema = z.object({
   userid: z
@@ -28,9 +30,9 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function LoginPage() { 
+export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const { mutate, isPending} = useLogin();
+  const { mutate, isPending } = useLogin();
   const router = useRouter();
 
   const {
@@ -48,14 +50,13 @@ export default function LoginPage() {
   const onSubmit = (data: LoginPayload) => {
     mutate(data, {
       onSuccess: (response) => {
-        console.log("Logged in: ", response);
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("refreshToken", response.refreshToken);
-        router.push("/Protected/dashboard");
+        localStorage.setItem("token", response.data.access_token);
+        router.push("/dashboard");
       },
-      onError: (err: APIError) => {
-        const errorMessage = err?.message || "Something went wrong";
-        console.error("Login error: ", errorMessage)
+      onError: (err: unknown) => {
+        const error = err as AxiosError<{ message: string }>;
+        const errorMessage = error?.response?.data.message || "Something went wrong";
+        toast(errorMessage);
       },
     });
   };
@@ -84,13 +85,8 @@ export default function LoginPage() {
             <div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type={showPassword ? "text" : "password"}  placeholder="Password" {...register("password")} className="pl-10 pr-10" />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(prev => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  tabIndex={-1}
-                >
+                <Input type={showPassword ? "text" : "password"} placeholder="Password" {...register("password")} className="pl-10 pr-10" />
+                <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
