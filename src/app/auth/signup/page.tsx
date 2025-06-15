@@ -7,7 +7,12 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { useRegister } from "@/features/auth/hooks/useAuth";
+import { RegisterPayload, APIError } from "@/types/types";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -20,6 +25,10 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function SignupPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const {mutate, isPending} = useRegister();
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
@@ -36,8 +45,26 @@ export default function SignupPage() {
   });
 
   const onSubmit = (data: FormData) => {
-    console.log(data);
-    localStorage.setItem("signupData", JSON.stringify(data));
+    const payload: RegisterPayload = {
+      firstname: data.firstName,
+      lastname: data.lastName,
+      username: data.userName,
+      email: data.email,
+      password: data.password,
+    };
+
+    mutate(payload, {
+      onSuccess: (res) => {
+        console.log("Registered successfully:", res);
+        localStorage.setItem("token", res.token);
+        localStorage.setItem("user", JSON.stringify(res.user));
+        router.push("/auth/login");
+      }, 
+      onError: (err: APIError) => {
+        const errorMessage = err?.message || "Something went wrong";
+        console.error("Signup error: ", errorMessage);
+      },
+    });
   };
 
   return (
@@ -91,22 +118,30 @@ export default function SignupPage() {
             <div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type="password" placeholder="Password" {...register("password")} className="pl-10" />
+                <Input type={showPassword ? "text" : "password"} placeholder="Password" {...register("password")} className="pl-10 pr-10" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full cursor-pointer">
-              Create account
+            <Button type="submit" className="w-full cursor-pointer" disabled={isPending}>
+              {isPending ? " Creating account..." : "Create account"}
             </Button>
           </form>
 
           <p className="text-sm text-center text-muted-foreground mt-4">
             Already have an account?{" "}
-            <a href="/auth/login" className="underline text-primary">
+            <Link href="/auth/login" className="underline text-primary">
               Log in
-            </a>
+            </Link>
           </p>
         </CardContent>
       </Card>
