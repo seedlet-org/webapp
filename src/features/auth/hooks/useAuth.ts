@@ -1,6 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { login, register } from "../api";
-import type { LoginPayload, RegisterPayload, APIError, AuthResponse } from "@/types/types";
+import type {
+  LoginPayload,
+  RegisterPayload,
+  APIError,
+  AuthResponse,
+} from "@/types/types";
 import { AxiosError } from "axios";
 
 export function useLogin() {
