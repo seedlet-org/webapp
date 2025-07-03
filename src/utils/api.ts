@@ -1,15 +1,13 @@
 import axios from "axios";
 import { FailedRequest, APIError } from "@/types/types";
 import { refresh } from "@/features/auth/api";
+import { toast } from "sonner";
 
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 
 const apiRequest = axios.create({
   baseURL: "https://seedlet-api.onrender.com/api/v1",
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 //Request interceptor
@@ -22,7 +20,10 @@ apiRequest.interceptors.request.use((config) => {
 });
 
 //Handler function for failedQueue
-const processQueue = (error: APIError | null | unknown, token: string | null = null) => {
+const processQueue = (
+  error: APIError | null | unknown,
+  token: string | null = null
+) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -39,6 +40,19 @@ apiRequest.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (error.response?.status === 429) {
+      const retryAfterHeader = error.response?.headers["retry-after"] || 60;
+      const retryAfter = Number(retryAfterHeader);
+
+      toast.error(
+        `Too many requests. Please try again after ${retryAfter} seconds.`,
+        { duration: 8000 }
+      );
+
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -58,7 +72,8 @@ apiRequest.interceptors.response.use(
         const newAccessToken = res.data.access_token;
         localStorage.setItem("token", newAccessToken);
 
-        apiRequest.defaults.headers.common["Authorization"] = "Bearer " + newAccessToken;
+        apiRequest.defaults.headers.common["Authorization"] =
+          "Bearer " + newAccessToken;
         processQueue(null, newAccessToken);
         return apiRequest(originalRequest);
       } catch (err) {

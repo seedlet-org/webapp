@@ -17,6 +17,13 @@ export type RegisterPayload = {
   lastname: string;
 };
 
+export type ResetPasswordPayload = {
+  email: string;
+  password: string;
+  confirm_password: string;
+  otp: string;
+};
+
 export type AuthResponse = {
   statuscode: number;
   message: string;

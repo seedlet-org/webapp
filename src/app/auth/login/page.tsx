@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { LoginPayload } from "@/types/types";
 import { useLogin } from "@/features/auth/hooks/useAuth";
@@ -25,7 +25,7 @@ const formSchema = z.object({
       const isUsername = /^[a-zA-Z0-9_]{3,}$/.test(value);
       return isEmail || isUsername;
     }, "Please enter a valid username or email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password must be at least 8 characters"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -49,13 +49,30 @@ export default function LoginPage() {
 
   const onSubmit = (data: LoginPayload) => {
     mutate(data, {
-      onSuccess: (response) => {
+      onSuccess: async (response) => {
+        const { username, access_token, profileUpdated } = response.data;
+
+        localStorage.setItem("token", access_token);
+        localStorage.setItem("username", username);
         localStorage.setItem("token", response.data.access_token);
-        router.push("/dashboard");
+        toast("Logged in successfully!");
+        try {
+          // console.log("Fetched profile:", profile);
+          // localStorage.setItem("profileData", JSON.stringify(profile));
+          if (!profileUpdated) {
+            router.push("/profile/edit");
+          } else {
+            router.push("/dashboard");
+          }
+        } catch (err) {
+          console.error("Failed to fetch user profile:", err);
+          toast("Unable to retrieve user profile.");
+        }
       },
       onError: (err: unknown) => {
         const error = err as AxiosError<{ message: string }>;
-        const errorMessage = error?.response?.data.message || "Something went wrong";
+        const errorMessage =
+          error?.response?.data.message || "Something went wrong";
         toast(errorMessage);
       },
     });
@@ -76,26 +93,60 @@ export default function LoginPage() {
             <div>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type="text" placeholder="Username/Email" {...register("userid")} className="pl-10" />
+                <Input
+                  type="text"
+                  placeholder="Username/Email"
+                  {...register("userid")}
+                  className="pl-10"
+                />
               </div>
-              {errors.userid && <p className="text-red-500 text-xs mt-1">{errors.userid.message}</p>}
+              {errors.userid && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.userid.message}
+                </p>
+              )}
             </div>
 
             {/* Password */}
             <div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input type={showPassword ? "text" : "password"} placeholder="Password" {...register("password")} className="pl-10 pr-10" />
-                <button type="button" onClick={() => setShowPassword((prev) => !prev)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" tabIndex={-1}>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  {...register("password")}
+                  className="pl-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer"
+                  tabIndex={-1}
+                >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full cursor-pointer" disabled={isPending}>
-              {isPending ? "Logging in..." : "Login"}
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="animate-spin" size={16} />
+                  Logging in...
+                </span>
+              ) : (
+                "Login"
+              )}
             </Button>
           </form>
 
@@ -107,7 +158,10 @@ export default function LoginPage() {
           </p>
 
           <p className="text-xs text-center text-muted-foreground mt-4">
-            <Link href="/auth/forgotPassword" className="underline text-primary">
+            <Link
+              href="/auth/forgotPassword"
+              className="underline text-primary"
+            >
               Forgot your password?
             </Link>
           </p>
