@@ -58,7 +58,6 @@ apiRequest.interceptors.response.use(
             return apiRequest(originalRequest);
           })
           .catch((err) => {
-            console.log("ERR", err);
             Promise.reject(err);
           });
       }
@@ -70,14 +69,12 @@ apiRequest.interceptors.response.use(
         const res = await refresh();
 
         const newAccessToken = res.data.access_token;
-        console.log("Refresh Response", res);
         localStorage.setItem("token", newAccessToken);
 
         apiRequest.defaults.headers.common["Authorization"] = "Bearer " + newAccessToken;
         processQueue(null, newAccessToken);
         return apiRequest(originalRequest);
       } catch (err) {
-        console.log(err);
         processQueue(err, null);
         localStorage.removeItem("token");
         window.location.href = "/auth/login";
