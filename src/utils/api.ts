@@ -1,13 +1,13 @@
 import axios from "axios";
 import { FailedRequest, APIError } from "@/types/types";
-import { refresh } from "@/features/auth/api";
 import { toast } from "sonner";
+import { refresh } from "@/features/auth/api";
 
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 
 const apiRequest = axios.create({
-  baseURL: "https://seedlet-api.onrender.com/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
   withCredentials: true,
 });
 
@@ -52,10 +52,15 @@ apiRequest.interceptors.response.use(
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          originalRequest.headers["Authorization"] = "Bearer " + token;
-          return apiRequest(originalRequest);
-        });
+        })
+          .then((token) => {
+            originalRequest.headers["Authorization"] = "Bearer " + token;
+            return apiRequest(originalRequest);
+          })
+          .catch((err) => {
+            console.log("ERR", err);
+            Promise.reject(err);
+          });
       }
 
       originalRequest._retry = true;
@@ -72,6 +77,7 @@ apiRequest.interceptors.response.use(
         processQueue(null, newAccessToken);
         return apiRequest(originalRequest);
       } catch (err) {
+        console.log(err);
         processQueue(err, null);
         localStorage.removeItem("token");
         window.location.href = "/auth/login";
