@@ -52,7 +52,51 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main Grid */}
+      {/* CTA Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-[#C9F4E5] p-6 rounded-2xl shadow-inner flex flex-col justify-between space-y-4">
+          <h2 className="text-[20px] font-semibold text-[#333]">
+            ✨ Ready to build something new?
+          </h2>
+          <p className="text-sm text-[#4F4F4F]">
+            Start a fresh Seedlet or continue your ongoing Lab.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              className="cursor-pointer"
+              onClick={() => router.push("/seedlets/new")}
+            >
+              New Seedlet
+            </Button>
+            <Button
+              variant="outline"
+              className="text-black cursor-pointer"
+              onClick={() => router.push("/labs")}
+            >
+              View Labs
+            </Button>
+          </div>
+        </div>
+
+        <div className="p-6 border border-dashed border-[#C9F4E5] bg-[#F9FFFD] rounded-2xl text-left shadow-sm space-y-4">
+          <h2 className="text-lg font-semibold text-[#333]">
+            Explore What Others Are Building
+          </h2>
+          <p className="text-sm text-[#4F4F4F]">
+            Seedlets are sprouting across the community. Get inspired, leave
+            feedback, or join one!
+          </p>
+          <Button
+            variant="outline"
+            className="border-[#42B883] text-[#42B883] hover:bg-[#C9F4E5] cursor-pointer"
+            onClick={() => router.push("/seedlets")}
+          >
+            Explore Seedlets
+          </Button>
+        </div>
+      </div>
+
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="space-y-6">
           {/* Your Stats */}
@@ -259,50 +303,6 @@ export default function DashboardPage() {
               </ul>
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#C9F4E5] p-6 rounded-2xl shadow-inner flex flex-col justify-between space-y-4">
-          <h2 className="text-[20px] font-semibold text-[#333]">
-            ✨ Ready to build something new?
-          </h2>
-          <p className="text-sm text-[#4F4F4F]">
-            Start a fresh Seedlet or continue your ongoing Lab.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              className="cursor-pointer"
-              onClick={() => router.push("/seedlets/new")}
-            >
-              New Seedlet
-            </Button>
-            <Button
-              variant="outline"
-              className="text-black cursor-pointer"
-              onClick={() => router.push("/labs")}
-            >
-              View Labs
-            </Button>
-          </div>
-        </div>
-
-        <div className="p-6 border border-dashed border-[#C9F4E5] bg-[#F9FFFD] rounded-2xl text-left shadow-sm space-y-4">
-          <h2 className="text-lg font-semibold text-[#333]">
-            Explore What Others Are Building
-          </h2>
-          <p className="text-sm text-[#4F4F4F]">
-            Seedlets are sprouting across the community. Get inspired, leave
-            feedback, or join one!
-          </p>
-          <Button
-            variant="outline"
-            className="border-[#42B883] text-[#42B883] hover:bg-[#C9F4E5] cursor-pointer"
-            onClick={() => router.push("/seedlets")}
-          >
-            Explore Seedlets
-          </Button>
         </div>
       </div>
     </div>
