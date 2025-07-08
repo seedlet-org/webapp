@@ -7,7 +7,7 @@ export default function FieldPage() {
   const router = useRouter();
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4 font-manrope">
+    <div className="max-w-6xl mx-auto py-10 px-6 font-manrope">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-[#42B883] flex items-center gap-2">
           <GalleryVerticalEnd size={24} />

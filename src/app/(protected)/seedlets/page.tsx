@@ -2,42 +2,35 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, Sprout, MessageCircle, Heart, UserPlus } from "lucide-react";
 import {
-  Plus,
-  Sprout,
-  Users,
-  MessageCircle,
-  Heart,
-  UserPlus,
-} from "lucide-react";
+  getInteractions,
+  updateInteraction,
+  Interaction,
+} from "@/utils/postInteractions";
+import { dummySeedlets } from "@/components/dummySeedlets";
 
 export default function SeedletsPage() {
-  const dummySeedlets = [
-    {
-      id: "1",
-      title: "AI Study Buddy",
-      description:
-        "An AI-powered tool to help students learn faster and stay organized.",
-      tags: ["AI", "EdTech"],
-      author: "@janedev",
-      interests: 4,
-      likes: 12,
-      comments: 3,
-      lookingFor: ["Frontend Dev", "UX Designer"],
-    },
-    {
-      id: "2",
-      title: "FinTrackr",
-      description:
-        "A mobile app for managing and visualizing personal finances.",
-      tags: ["Fintech", "Mobile"],
-      author: "@mikesoft",
-      interests: 6,
-      likes: 8,
-      comments: 1,
-      lookingFor: ["Backend Dev"],
-    },
-  ];
+  const router = useRouter();
+  const [interactions, setInteractions] = useState<Interaction[]>([]);
+
+  useEffect(() => {
+    setInteractions(getInteractions());
+  }, []);
+
+  const toggleInteraction = (id: string, type: "liked" | "interested") => {
+    setInteractions((prev) => {
+      const updated = prev.map((i) =>
+        i.id === id ? { ...i, [type]: !i[type] } : i
+      );
+      updateInteraction(id, {
+        [type]: !prev.find((i) => i.id === id)?.[type],
+      });
+      return updated;
+    });
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
@@ -61,72 +54,107 @@ export default function SeedletsPage() {
       </div>
 
       {/* Seedlet Cards */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {dummySeedlets.map((seedlet) => (
-          <div
-            key={seedlet.id}
-            className="rounded-xl border shadow-sm p-6 bg-white hover:shadow-md transition"
-          >
-            <Link href={`/seedlets/${seedlet.id}`}>
-              <h2 className="text-xl font-semibold text-[#333] hover:underline cursor-pointer">
-                {seedlet.title}
-              </h2>
-            </Link>
-            <p className="text-sm text-muted-foreground mt-1 mb-2">
-              {seedlet.description}
-            </p>
+      <div className="grid md:grid-cols-2 gap-6 cursor-pointer">
+        {dummySeedlets.map((seedlet) => {
+          const interaction = interactions.find((i) => i.id === seedlet.id) ?? {
+            id: seedlet.id,
+            liked: false,
+            interested: false,
+            comments: [],
+          };
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-3">
-              {seedlet.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs bg-[#C9F4E5] text-[#36A273] px-2 py-1 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
+          return (
+            <div
+              key={seedlet.id}
+              onClick={() => router.push(`/seedlets/${seedlet.id}`)}
+              className="rounded-xl border shadow-sm p-6 bg-white hover:shadow-md transition group"
+            >
+              <div className="cursor-pointer">
+                <h2 className="text-xl font-semibold text-[#333]">
+                  {seedlet.title}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1 mb-2">
+                  {seedlet.description}
+                </p>
+              </div>
 
-            {/* Looking for */}
-            {seedlet.lookingFor.length > 0 && (
-              <p className="text-sm text-[#4F4F4F] mb-3">
-                <strong>Looking for:</strong> {seedlet.lookingFor.join(", ")}
-              </p>
-            )}
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {seedlet.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-xs bg-[#C9F4E5] text-[#36A273] px-2 py-1 rounded-full"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between text-sm text-[#4F4F4F]">
-              <span>By {seedlet.author}</span>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <Heart size={16} className="text-[#42B883] cursor-pointer" />
-                  {seedlet.likes}
-                </div>
-                <div className="flex items-center gap-1">
-                  <MessageCircle
-                    size={16}
-                    className="text-[#42B883] cursor-pointer"
-                  />
-                  {seedlet.comments}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users size={16} className="text-[#42B883] cursor-pointer" />
-                  {seedlet.interests}
+              {/* Looking for */}
+              {seedlet.lookingFor.length > 0 && (
+                <p className="text-sm text-[#4F4F4F] mb-3">
+                  <strong>Looking for:</strong> {seedlet.lookingFor.join(", ")}
+                </p>
+              )}
+
+              {/* Footer */}
+              <div className="flex items-center justify-between text-sm text-[#4F4F4F]">
+                <span>By {seedlet.author}</span>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleInteraction(seedlet.id, "liked");
+                    }}
+                    title="Like"
+                    className="flex items-center gap-1 cursor-pointer"
+                  >
+                    <Heart
+                      size={16}
+                      className={`${
+                        interaction.liked
+                          ? "fill-[#FF6B6B] text-[#FF6B6B]"
+                          : "text-[#FF6B6B]"
+                      }`}
+                    />
+                    {seedlet.likes + (interaction.liked ? 1 : 0)}
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/seedlets/${seedlet.id}?focus=comment`);
+                    }}
+                    title="Comment"
+                    className="flex items-center gap-1 cursor-pointer"
+                  >
+                    <MessageCircle size={16} className="text-[#42B883]" />
+                    {interaction.comments.length}
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleInteraction(seedlet.id, "interested");
+                    }}
+                    title="I'm Interested"
+                    className="flex items-center gap-1 cursor-pointer"
+                  >
+                    <UserPlus
+                      size={16}
+                      className={`${
+                        interaction.interested
+                          ? "fill-[#6C5DD3] text-[#6C5DD3]"
+                          : "text-[#6C5DD3]"
+                      }`}
+                    />
+                    {seedlet.interests + (interaction.interested ? 1 : 0)}
+                  </button>
                 </div>
               </div>
             </div>
-
-            {/* Interest Button */}
-            <Button
-              variant="outline"
-              className="mt-4 w-full flex items-center cursor-pointer justify-center gap-2 text-[#42B883] border-[#42B883] hover:bg-[#C9F4E5]"
-            >
-              <UserPlus size={16} />
-              I’m Interested
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* If no seedlets */}

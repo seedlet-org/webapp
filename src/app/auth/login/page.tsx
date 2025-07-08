@@ -50,23 +50,28 @@ export default function LoginPage() {
   const onSubmit = (data: LoginPayload) => {
     mutate(data, {
       onSuccess: async (response) => {
+        if (!response?.data) {
+          toast("Unexpected response from server");
+          console.error("Login response missing data:", response);
+          return;
+        }
+
         const { username, access_token, profileUpdated } = response.data;
 
         localStorage.setItem("token", access_token);
         localStorage.setItem("username", username);
-        localStorage.setItem("token", response.data.access_token);
+
         toast("Logged in successfully!");
+
         try {
-          // console.log("Fetched profile:", profile);
-          // localStorage.setItem("profileData", JSON.stringify(profile));
           if (!profileUpdated) {
             router.push("/profile/edit");
           } else {
             router.push("/dashboard");
           }
         } catch (err) {
-          console.error("Failed to fetch user profile:", err);
-          toast("Unable to retrieve user profile.");
+          console.error("Failed to redirect user:", err);
+          toast("Unable to proceed after login.");
         }
       },
       onError: (err: unknown) => {

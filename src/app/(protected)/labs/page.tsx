@@ -8,7 +8,7 @@ export default function LabsPage() {
   const router = useRouter();
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12 space-y-6 font-manrope">
+    <div className="max-w-6xl mx-auto px-6 py-10 space-y-6 font-manrope">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
