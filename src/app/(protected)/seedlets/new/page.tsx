@@ -40,7 +40,7 @@ export default function NewSeedletPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12 font-manrope">
+    <div className="max-w-6xl mx-auto px-6 py-12 font-manrope">
       {/* Back Button */}
       <button
         onClick={() => router.push("/seedlets")}

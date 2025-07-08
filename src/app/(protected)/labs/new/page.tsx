@@ -62,7 +62,7 @@ export default function NewLabPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4 font-manrope">
+    <div className="max-w-6xl mx-auto py-10 px-6 font-manrope">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
