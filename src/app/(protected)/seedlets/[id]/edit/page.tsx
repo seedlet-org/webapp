@@ -8,12 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { Sprout, ArrowLeft, Loader2 } from "lucide-react";
-import { useCreateIdea } from "@/features/ideas/hooks/useIdeas";
+import { useRouter, useParams } from "next/navigation";
+import { Pencil, ArrowLeft, Loader2 } from "lucide-react";
+import { useUpdateIdea, useIdeaById } from "@/features/ideas/hooks/useIdeas";
 import { useTags } from "@/features/tags/hooks/useTags";
 import { Label } from "@/components/ui/label";
 import MultipleSelector, { Option } from "@/components/ui/multiselect";
+import { useEffect } from "react";
 import { Tag } from "@/types/types";
 
 const formSchema = z.object({
@@ -26,15 +27,18 @@ const formSchema = z.object({
   roles: z.string().optional(),
 });
 
-export default function NewSeedletPage() {
+export default function EditSeedletPage() {
   const router = useRouter();
-  const createIdea = useCreateIdea();
+  const { id } = useParams();
   const { data: tagsData = [] } = useTags();
+  const { data: ideaData, isLoading } = useIdeaById(id as string);
+  const updateIdea = useUpdateIdea(id as string);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -42,6 +46,31 @@ export default function NewSeedletPage() {
       tags: [],
     },
   });
+
+  // Prefill form
+  useEffect(() => {
+    if (ideaData?.data?.idea) {
+      const idea = ideaData.data.idea;
+      setValue("title", idea.title);
+      setValue("description", idea.description);
+      setValue("tags", idea.tags?.map((t: Tag) => t.name) || []);
+      setValue("roles", idea.neededRoles?.join(", ") || "");
+    }
+  }, [ideaData, setValue]);
+
+  if (isLoading) {
+    return (
+      <div className="p-10 text-center text-gray-500">Loading Seedlet...</div>
+    );
+  }
+
+  if (!ideaData?.data?.idea) {
+    return (
+      <div className="p-10 text-center text-gray-500">
+        Seedlet not found or you are not the owner.
+      </div>
+    );
+  }
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const rolesArray = data.roles
@@ -51,7 +80,7 @@ export default function NewSeedletPage() {
           .filter(Boolean)
       : [];
 
-    createIdea.mutate(
+    updateIdea.mutate(
       {
         title: data.title,
         description: data.description,
@@ -60,11 +89,11 @@ export default function NewSeedletPage() {
       },
       {
         onSuccess: () => {
-          toast.success("Seedlet created!");
-          router.push("/seedlets");
+          toast.success("Seedlet updated!");
+          router.push(`/seedlets/${id}`);
         },
         onError: () => {
-          toast.error("Failed to create Seedlet, please try again.");
+          toast.error("Failed to update Seedlet, please try again.");
         },
       }
     );
@@ -79,20 +108,20 @@ export default function NewSeedletPage() {
     <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
       {/* Back button */}
       <button
-        onClick={() => router.push("/seedlets")}
+        onClick={() => router.push(`/seedlets/${id}`)}
         className="mb-6 flex items-center gap-2 text-sm font-medium text-black cursor-pointer hover:underline transition"
       >
         <ArrowLeft size={16} />
-        Back to Seedlets
+        Back to Seedlet
       </button>
       <Card>
         <CardHeader className="mb-4">
           <h2 className="text-2xl font-bold text-[#42B883] flex items-center gap-2">
-            <Sprout size={22} />
-            Create a New Seedlet
+            <Pencil size={22} />
+            Edit Seedlet
           </h2>
           <p className="text-muted-foreground text-sm">
-            Share your idea with the community and attract collaborators.
+            Update your idea details and keep collaborators in the loop.
           </p>
         </CardHeader>
         <CardContent>
@@ -102,10 +131,7 @@ export default function NewSeedletPage() {
               <label className="block text-sm font-medium mb-1 text-[#333]">
                 Title
               </label>
-              <Input
-                {...register("title")}
-                placeholder="AI-Powered Study Buddy"
-              />
+              <Input {...register("title")} />
               {errors.title && (
                 <p className="text-sm text-red-500 mt-1">
                   {errors.title.message}
@@ -120,7 +146,6 @@ export default function NewSeedletPage() {
               </label>
               <Textarea
                 {...register("description")}
-                placeholder="Briefly describe your idea, problem it solves, or the goal..."
                 className="min-h-[120px]"
               />
               {errors.description && (
@@ -179,24 +204,20 @@ export default function NewSeedletPage() {
                 Who are you looking for?{" "}
                 <span className="text-gray-500 text-xs">(comma-seperated)</span>
               </label>
-              <Input
-                {...register("roles")}
-                placeholder="frontend dev, co-founder..."
-              />
+              <Input {...register("roles")} />
             </div>
 
-            {/* Submit button */}
             <Button
               type="submit"
-              disabled={createIdea.isPending}
+              disabled={updateIdea.isPending}
               className="w-full bg-[#42B883] hover:bg-[#36A273] text-white font-semibold cursor-pointer"
             >
-              {createIdea.isPending ? (
+              {updateIdea.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Posting...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Saving...
                 </>
               ) : (
-                "Post Seedlet"
+                "Save Changes"
               )}
             </Button>
           </form>

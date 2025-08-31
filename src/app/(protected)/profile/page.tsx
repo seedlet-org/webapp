@@ -26,7 +26,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import SeedletLoader from "@/components/SeedletLoader";
 
 export default function CurrentUserProfilePage() {
   const router = useRouter();
@@ -38,8 +37,8 @@ export default function CurrentUserProfilePage() {
 
   if (isLoading || !user) {
     return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <SeedletLoader />
+      <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
+        <p className="text-center text-gray-500">Loading profile...</p>
       </div>
     );
   }

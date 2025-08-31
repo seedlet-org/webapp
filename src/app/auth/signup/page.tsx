@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Mail,
   Lock,
   User,
@@ -16,6 +22,7 @@ import {
   CheckCircle,
   Circle,
   Loader2,
+  Info,
 } from "lucide-react";
 import { useState } from "react";
 import { useRegister } from "@/features/auth/hooks/useAuth";
@@ -64,6 +71,7 @@ export default function SignupPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [passwordValue, setPasswordValue] = useState("");
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
 
   const {
     register,
@@ -246,15 +254,30 @@ export default function SignupPage() {
 
               <div>
                 {/* Username */}
-                <div className="relative">
+                <div className="relative flex items-center">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+
                   <Input
                     type="text"
                     placeholder="Username"
                     {...register("userName")}
-                    className="pl-10"
+                    className="pl-10 pr-8"
+                    onFocus={() => setTooltipOpen(true)}
+                    onBlur={() => setTooltipOpen(false)}
                   />
+
+                  <TooltipProvider>
+                    <Tooltip open={tooltipOpen} onOpenChange={setTooltipOpen}>
+                      <TooltipTrigger asChild>
+                        <Info className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground cursor-pointer" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Username can only contain letters and numbers.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
+
                 {errors.userName && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.userName.message}

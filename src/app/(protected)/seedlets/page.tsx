@@ -2,35 +2,54 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Sprout, MessageCircle, Heart, UserPlus } from "lucide-react";
 import {
-  getInteractions,
-  updateInteraction,
-  Interaction,
-} from "@/utils/postInteractions";
-import { dummySeedlets } from "@/components/dummySeedlets";
+  Plus,
+  Sprout,
+  MessageCircle,
+  Heart,
+  UserPlus,
+  Loader2,
+} from "lucide-react";
+import {
+  useIdeas,
+  useLikeIdea,
+  useShowInterest,
+} from "@/features/ideas/hooks/useIdeas";
+import { useCurrentUser } from "@/features/user/hooks/useUser";
+import { Tag, Seedlet } from "@/types/types";
+import { useState } from "react";
 
 export default function SeedletsPage() {
   const router = useRouter();
-  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const { data: user } = useCurrentUser();
 
-  useEffect(() => {
-    setInteractions(getInteractions());
-  }, []);
+  // Fetch ideas
+  const { data: seedlets, isLoading } = useIdeas();
+  const seedletList = seedlets?.data ?? [];
 
-  const toggleInteraction = (id: string, type: "liked" | "interested") => {
-    setInteractions((prev) => {
-      const updated = prev.map((i) =>
-        i.id === id ? { ...i, [type]: !i[type] } : i
-      );
-      updateInteraction(id, {
-        [type]: !prev.find((i) => i.id === id)?.[type],
-      });
-      return updated;
-    });
-  };
+  // Mutations
+  const likeMutation = useLikeIdea();
+  const interestMutation = useShowInterest();
+
+  // Local loader tracking
+  const [likingSeedletId, setLikingSeedletId] = useState<string | null>(null);
+  const [interestedSeedletId, setInterestedSeedletId] = useState<string | null>(
+    null
+  );
+
+  // Role picker state
+  const [rolePickerSeedletId, setRolePickerSeedletId] = useState<string | null>(
+    null
+  );
+
+  if (isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
+        <p className="text-center text-gray-500">Loading seedlets...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
@@ -53,15 +72,12 @@ export default function SeedletsPage() {
         </Link>
       </div>
 
-      {/* Seedlet Cards */}
+      {/* Seedlet cards */}
       <div className="grid md:grid-cols-2 gap-6 cursor-pointer">
-        {dummySeedlets.map((seedlet) => {
-          const interaction = interactions.find((i) => i.id === seedlet.id) ?? {
-            id: seedlet.id,
-            liked: false,
-            interested: false,
-            comments: [],
-          };
+        {seedletList?.map((seedlet: Seedlet) => {
+          const isOwner =
+            String(user?.data?.id) ===
+            String(seedlet.ownerId ?? seedlet.owner?.id);
 
           return (
             <div
@@ -80,46 +96,61 @@ export default function SeedletsPage() {
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-3">
-                {seedlet.tags.map((tag) => (
+                {seedlet.tags.map((tag: Tag) => (
                   <span
-                    key={tag}
+                    key={tag.id}
                     className="text-xs bg-[#C9F4E5] text-[#36A273] px-2 py-1 rounded-full"
                   >
-                    #{tag}
+                    #{tag.name}
                   </span>
                 ))}
               </div>
 
-              {/* Looking for */}
-              {seedlet.lookingFor.length > 0 && (
+              {/* Needed roles */}
+              {seedlet.neededRoles?.length > 0 && (
                 <p className="text-sm text-[#4F4F4F] mb-3">
-                  <strong>Looking for:</strong> {seedlet.lookingFor.join(", ")}
+                  <strong>Looking for:</strong> {seedlet.neededRoles.join(", ")}
                 </p>
               )}
 
-              {/* Footer */}
+              {/* Card footer */}
               <div className="flex items-center justify-between text-sm text-[#4F4F4F]">
-                <span>By {seedlet.author}</span>
+                <span>
+                  <strong>By:</strong> @{seedlet.owner?.username}
+                </span>
                 <div className="flex items-center gap-4">
+                  {/* Like */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleInteraction(seedlet.id, "liked");
+                      setLikingSeedletId(seedlet.id);
+                      likeMutation.mutate(seedlet.id, {
+                        onSettled: () => setLikingSeedletId(null),
+                      });
                     }}
                     title="Like"
-                    className="flex items-center gap-1 cursor-pointer"
+                    className="flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    disabled={likingSeedletId === seedlet.id}
                   >
-                    <Heart
-                      size={16}
-                      className={`${
-                        interaction.liked
-                          ? "fill-[#FF6B6B] text-[#FF6B6B]"
-                          : "text-[#FF6B6B]"
-                      }`}
-                    />
-                    {seedlet.likes + (interaction.liked ? 1 : 0)}
+                    {likingSeedletId === seedlet.id ? (
+                      <Loader2
+                        size={16}
+                        className="text-[#FF6B6B] animate-spin"
+                      />
+                    ) : (
+                      <Heart
+                        size={16}
+                        className={`${
+                          seedlet.likedByCurrentUser
+                            ? "fill-[#FF6B6B] text-[#FF6B6B]"
+                            : "text-[#FF6B6B]"
+                        }`}
+                      />
+                    )}
+                    {seedlet.likeCount ?? 0}
                   </button>
 
+                  {/* Comment */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -129,27 +160,86 @@ export default function SeedletsPage() {
                     className="flex items-center gap-1 cursor-pointer"
                   >
                     <MessageCircle size={16} className="text-[#42B883]" />
-                    {interaction.comments.length}
+                    {seedlet.commentCount ?? 0}
                   </button>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleInteraction(seedlet.id, "interested");
-                    }}
-                    title="I'm Interested"
-                    className="flex items-center gap-1 cursor-pointer"
-                  >
-                    <UserPlus
-                      size={16}
-                      className={`${
-                        interaction.interested
-                          ? "fill-[#6C5DD3] text-[#6C5DD3]"
-                          : "text-[#6C5DD3]"
+                  {/* Interest */}
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isOwner) return;
+                        setRolePickerSeedletId(
+                          rolePickerSeedletId === seedlet.id ? null : seedlet.id
+                        );
+                      }}
+                      disabled={isOwner || interestedSeedletId === seedlet.id}
+                      title={
+                        isOwner
+                          ? "You cannot show interest in your own Seedlet"
+                          : "I'm Interested"
+                      }
+                      className={`flex items-center gap-1 ${
+                        isOwner
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-black cursor-pointer"
                       }`}
-                    />
-                    {seedlet.interests + (interaction.interested ? 1 : 0)}
-                  </button>
+                    >
+                      {interestedSeedletId === seedlet.id ? (
+                        <Loader2
+                          size={16}
+                          className="text-[#6C5DD3] animate-spin"
+                        />
+                      ) : (
+                        <UserPlus
+                          size={16}
+                          className={`${
+                            seedlet.interestedByCurrentUser
+                              ? "fill-[#6C5DD3] text-[#6C5DD3]"
+                              : "text-[#6C5DD3]"
+                          }`}
+                        />
+                      )}
+                      {seedlet.interestCount ?? 0}
+                    </button>
+
+                    {/* Role Picker */}
+                    {rolePickerSeedletId === seedlet.id && !isOwner && (
+                      <div
+                        className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md p-3 z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="text-sm mb-2 text-gray-600">
+                          Select a role
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {(seedlet.neededRoles ?? []).map((role: string) => (
+                            <button
+                              key={role}
+                              onClick={() => {
+                                setInterestedSeedletId(seedlet.id);
+                                interestMutation.mutate(
+                                  {
+                                    id: seedlet.id,
+                                    roleInterestedIn: role,
+                                  },
+                                  {
+                                    onSettled: () => {
+                                      setInterestedSeedletId(null);
+                                      setRolePickerSeedletId(null);
+                                    },
+                                  }
+                                );
+                              }}
+                              className="px-3 py-1 rounded-md text-sm bg-[#F3F4F6]  hover:bg-[#42B883] hover:text-white transition text-left cursor-pointer"
+                            >
+                              {role}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -158,7 +248,7 @@ export default function SeedletsPage() {
       </div>
 
       {/* If no seedlets */}
-      {dummySeedlets.length === 0 && (
+      {seedletList?.length === 0 && (
         <div className="border border-dashed border-[#C9F4E5] p-10 rounded-2xl text-center bg-[#F9FFFD] shadow-sm mt-10">
           <h2 className="text-xl font-semibold text-[#333] mb-2">
             No seedlets posted yet.
