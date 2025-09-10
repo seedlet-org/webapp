@@ -24,6 +24,8 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ReplyThread from "@/components/ReplyThread";
 import { Idea, Comment, Reply, Tag } from "@/types/types";
+import RolePicker from "@/components/RolePicker";
+import { useSeedletEvents } from "@/features/ideas/hooks/useSeedletEvents";
 
 export default function SeedletDetailPage() {
   const { id } = useParams();
@@ -35,6 +37,9 @@ export default function SeedletDetailPage() {
 
   // Fetch idea
   const { data: ideaData, isLoading } = useIdeaById(id as string);
+
+  // Listen to real-time events
+  useSeedletEvents();
 
   // Mutations
   const likeIdea = useLikeIdea();
@@ -56,6 +61,7 @@ export default function SeedletDetailPage() {
   const { data: activeCommentData, isLoading: activeCommentLoading } =
     useCommentById(activeCommentId);
 
+  // Comment focus
   useEffect(() => {
     if (focusComment && commentRef.current) {
       commentRef.current.focus();
@@ -73,6 +79,9 @@ export default function SeedletDetailPage() {
   }
 
   const seedlet: Idea = ideaData.data.idea;
+  const userInterest = seedlet.interests?.find(
+    (i) => String(i.userId) === String(user?.data?.id)
+  );
 
   // Sort top-level comments newest-first
   const comments: Comment[] =
@@ -89,10 +98,10 @@ export default function SeedletDetailPage() {
     setNewComment("");
   };
 
-  const handleInterest = (role: string) => {
-    showInterest.mutate({ id: id as string, roleInterestedIn: role });
-    setInterestOpen(false);
-  };
+  // const handleInterest = (role: string) => {
+  //   showInterest.mutate({ id: id as string, roleInterestedIn: role });
+  //   setInterestOpen(false);
+  // };
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
@@ -158,7 +167,7 @@ export default function SeedletDetailPage() {
                 <Heart
                   size={18}
                   className="text-[#FF6B6B]"
-                  fill={seedlet.isLikedByUser ? "#FF6B6B" : "none"}
+                  fill={seedlet.likedByCurrentUser ? "#FF6B6B" : "none"} // Requires the field my chief will add
                 />
               )}
               {seedlet.likeCount}
@@ -191,29 +200,35 @@ export default function SeedletDetailPage() {
                   : "I'm Interested"
               }
             >
-              <UserPlus size={18} className="text-[#6C5DD3]" />
+              <UserPlus
+                size={18}
+                className={`${
+                  seedlet.interestedByCurrentUser // ✅ unified
+                    ? "fill-[#6C5DD3] text-[#6C5DD3]"
+                    : "text-[#6C5DD3]"
+                }`}
+              />
+
               {seedlet.interestCount}
             </button>
 
             {/* Role picker */}
-            {interestOpen &&
-              String(user?.data?.id) !==
-                String(seedlet.ownerId ?? seedlet.owner?.id) && (
-                <div className="absolute top-8 left-40 bg-white border rounded-lg shadow-md p-3 z-10">
-                  <p className="text-sm mb-2">Select your role</p>
-                  <div className="flex flex-col gap-2">
-                    {seedlet.neededRoles?.map((role: string) => (
-                      <button
-                        key={role}
-                        onClick={() => handleInterest(role)}
-                        className="px-3 py-1 rounded-md text-sm bg-gray-100 hover:bg-[#42B883] hover:text-white transition cursor-pointer"
-                      >
-                        {role}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {interestOpen && (
+              <RolePicker
+                seedlet={seedlet}
+                userId={user?.data?.id}
+                isOwner={String(user?.data?.id) === String(seedlet.ownerId)}
+                isLoading={showInterest.isPending}
+                selectedRole={userInterest?.roleInterestedIn}
+                onSelectRole={(role) =>
+                  showInterest.mutate({
+                    id: id as string,
+                    roleInterestedIn: role,
+                  })
+                }
+                onClose={() => setInterestOpen(false)}
+              />
+            )}
           </div>
 
           {/* Comment section */}
@@ -355,7 +370,7 @@ export default function SeedletDetailPage() {
                             <Heart
                               size={14}
                               className={
-                                comment.isLikedByUser
+                                comment.likedByCurrentUser // Requires the field my chief will add
                                   ? "fill-[#FF6B6B] text-[#FF6B6B]"
                                   : "text-[#FF6B6B]"
                               }
@@ -364,27 +379,33 @@ export default function SeedletDetailPage() {
                           {comment.likeCount || 0}
                         </button>
 
-                        <button
-                          onClick={() =>
-                            setActiveCommentId(
-                              activeCommentId === comment.id ? null : comment.id
-                            )
-                          }
-                          className="flex items-center gap-1 hover:text-[#42B883] cursor-pointer"
-                        >
-                          <MessageCircle size={14} />
-                          {activeCommentId === comment.id ? (
-                            activeCommentLoading ? (
-                              <>
-                                <Loader2 size={12} className="animate-spin" />{" "}
-                              </>
+                        {comment.commentCount > 0 && (
+                          <button
+                            onClick={() =>
+                              setActiveCommentId(
+                                activeCommentId === comment.id
+                                  ? null
+                                  : comment.id
+                              )
+                            }
+                            className="flex items-center gap-1 hover:text-[#42B883] cursor-pointer"
+                          >
+                            <MessageCircle size={14} />
+                            {activeCommentId === comment.id ? (
+                              activeCommentLoading ? (
+                                <>
+                                  <Loader2 size={12} className="animate-spin" />{" "}
+                                </>
+                              ) : (
+                                "Hide Replies"
+                              )
                             ) : (
-                              "Hide Replies"
-                            )
-                          ) : (
-                            "View Replies"
-                          )}
-                        </button>
+                              `View ${comment.commentCount} ${
+                                comment.commentCount === 1 ? "Reply" : "Replies"
+                              }`
+                            )}
+                          </button>
+                        )}
 
                         <button
                           onClick={() => {

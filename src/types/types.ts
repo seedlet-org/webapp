@@ -63,19 +63,31 @@ export interface Owner {
   username: string;
 }
 
+export interface Interest {
+  id: string;
+  ideaId: string;
+  userId: string;
+  roleInterestedIn: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Seedlet {
   id: string;
   title: string;
   description: string;
   tags: Tag[];
+  interests?: Interest[];
   neededRoles: string[];
   ownerId?: string;
   owner?: Owner;
   likeCount: number;
   commentCount: number;
   interestCount: number;
+
+  // My chief will add these
   likedByCurrentUser: boolean;
-  interestedByCurrentUser: boolean;
+  currentUserHasInterest: boolean;
 }
 
 export interface User {
@@ -90,7 +102,8 @@ export interface Comment {
   owner?: User;
   parentId?: string;
   likeCount: number;
-  isLikedByUser?: boolean;
+  commentCount: number;
+  likedByCurrentUser?: boolean;
   createdAt: string;
 }
 
@@ -103,11 +116,15 @@ export interface Idea {
   tags: { id: string; name: string }[];
   ownerId?: string;
   owner?: User;
+  interests?: Interest[];
   neededRoles: string[];
   likeCount: number;
   interestCount: number;
   commentCount: number;
-  isLikedByUser?: boolean;
+
+  // My chief will add these
+  likedByCurrentUser?: boolean;
+  currentUserHasInterest: boolean;
 }
 
 export type ReplyThreadProps = {
@@ -116,3 +133,35 @@ export type ReplyThreadProps = {
   parentId: string;
   depth?: number;
 };
+
+export type RolePickerProps = {
+  seedlet: Idea;
+  userId?: string;
+  isOwner: boolean;
+  isLoading: boolean;
+  selectedRole?: string;
+  onSelectRole: (role: string) => void;
+  onClose: () => void;
+};
+
+export type SSEMessage =
+  | { ref: "idea"; refId: string; liked: boolean }
+  | { ref: "idea"; refId: string; reply: CommentReply }
+  | { ref: "idea"; refId: string; interested: number }
+  | { ref: "idea"; created: Seedlet };
+
+// Comment event type
+export interface CommentReply {
+  id: string;
+  content: string;
+  ideaId: string;
+  owner: {
+    id: string;
+    username: string;
+  };
+}
+
+// React-query caches types
+export type FeedCache = { data: Seedlet[] };
+export type DetailCache = { data: { idea: Seedlet; comments: CommentReply[] } };
+export type CommentCache = { data: { comments: CommentReply[] } };

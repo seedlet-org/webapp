@@ -96,7 +96,7 @@ export default function ReplyThread({
             <Heart
               size={12}
               className={
-                reply.isLikedByUser
+                reply.likedByCurrentUser
                   ? "fill-[#FF6B6B] text-[#FF6B6B]"
                   : "text-[#FF6B6B]"
               }
@@ -105,17 +105,23 @@ export default function ReplyThread({
           {reply.likeCount || 0}
         </button>
 
-        <button
-          onClick={() =>
-            setActiveNestedId(activeNestedId === reply.id ? null : reply.id)
-          }
-          className="flex items-center gap-1 hover:text-[#42B883] cursor-pointer"
-        >
-          <MessageCircle size={12} />
-          <span>
-            {activeNestedId === reply.id ? "Hide Replies" : "View Replies"}
-          </span>
-        </button>
+        {reply.commentCount > 0 && (
+          <button
+            onClick={() =>
+              setActiveNestedId(activeNestedId === reply.id ? null : reply.id)
+            }
+            className="flex items-center gap-1 hover:text-[#42B883] cursor-pointer"
+          >
+            <MessageCircle size={12} />
+            <span>
+              {activeNestedId === reply.id
+                ? "Hide Replies"
+                : `View ${reply.commentCount} ${
+                    reply.commentCount === 1 ? "Reply" : "Replies"
+                  }`}
+            </span>
+          </button>
+        )}
 
         <button
           onClick={() => {

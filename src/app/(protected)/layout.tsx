@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ClientAppLayout from "@/components/layouts/ClientAppLayout";
 import SeedletLoader from "@/components/SeedletLoader";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 export default function ProtectedLayout({
   children,
@@ -25,5 +26,10 @@ export default function ProtectedLayout({
 
   if (isLoading) return <SeedletLoader />;
 
-  return <ClientAppLayout>{children}</ClientAppLayout>;
+  return (
+    <ClientAppLayout>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </ClientAppLayout>
+  );
 }

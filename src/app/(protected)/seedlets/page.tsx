@@ -1,16 +1,10 @@
+// app/(your-route)/seedlets/page.tsx (or wherever your feed lives)
 "use client";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import {
-  Plus,
-  Sprout,
-  MessageCircle,
-  Heart,
-  UserPlus,
-  Loader2,
-} from "lucide-react";
+import { Plus, Sprout, MessageCircle, Heart, UserPlus } from "lucide-react";
 import {
   useIdeas,
   useLikeIdea,
@@ -19,6 +13,8 @@ import {
 import { useCurrentUser } from "@/features/user/hooks/useUser";
 import { Tag, Seedlet } from "@/types/types";
 import { useState } from "react";
+import RolePicker from "@/components/RolePicker";
+import { useSeedletEvents } from "@/features/ideas/hooks/useSeedletEvents";
 
 export default function SeedletsPage() {
   const router = useRouter();
@@ -28,15 +24,12 @@ export default function SeedletsPage() {
   const { data: seedlets, isLoading } = useIdeas();
   const seedletList = seedlets?.data ?? [];
 
+  // Listen to real-time events
+  useSeedletEvents();
+
   // Mutations
   const likeMutation = useLikeIdea();
   const interestMutation = useShowInterest();
-
-  // Local loader tracking
-  const [likingSeedletId, setLikingSeedletId] = useState<string | null>(null);
-  const [interestedSeedletId, setInterestedSeedletId] = useState<string | null>(
-    null
-  );
 
   // Role picker state
   const [rolePickerSeedletId, setRolePickerSeedletId] = useState<string | null>(
@@ -74,7 +67,7 @@ export default function SeedletsPage() {
 
       {/* Seedlet cards */}
       <div className="grid md:grid-cols-2 gap-6 cursor-pointer">
-        {seedletList?.map((seedlet: Seedlet) => {
+        {seedletList.map((seedlet: Seedlet) => {
           const isOwner =
             String(user?.data?.id) ===
             String(seedlet.ownerId ?? seedlet.owner?.id);
@@ -89,7 +82,7 @@ export default function SeedletsPage() {
                 <h2 className="text-xl font-semibold text-[#333]">
                   {seedlet.title}
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1 mb-2">
+                <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-3">
                   {seedlet.description}
                 </p>
               </div>
@@ -123,30 +116,20 @@ export default function SeedletsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setLikingSeedletId(seedlet.id);
-                      likeMutation.mutate(seedlet.id, {
-                        onSettled: () => setLikingSeedletId(null),
-                      });
+                      // optimistic toggle handled in mutation
+                      likeMutation.mutate(seedlet.id);
                     }}
                     title="Like"
-                    className="flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                    disabled={likingSeedletId === seedlet.id}
+                    className="flex items-center gap-1 cursor-pointer"
                   >
-                    {likingSeedletId === seedlet.id ? (
-                      <Loader2
-                        size={16}
-                        className="text-[#FF6B6B] animate-spin"
-                      />
-                    ) : (
-                      <Heart
-                        size={16}
-                        className={`${
-                          seedlet.likedByCurrentUser
-                            ? "fill-[#FF6B6B] text-[#FF6B6B]"
-                            : "text-[#FF6B6B]"
-                        }`}
-                      />
-                    )}
+                    <Heart
+                      size={16}
+                      className={`${
+                        seedlet.likedByCurrentUser
+                          ? "fill-[#FF6B6B] text-[#FF6B6B]"
+                          : "text-[#FF6B6B]"
+                      }`}
+                    />
                     {seedlet.likeCount ?? 0}
                   </button>
 
@@ -173,7 +156,6 @@ export default function SeedletsPage() {
                           rolePickerSeedletId === seedlet.id ? null : seedlet.id
                         );
                       }}
-                      disabled={isOwner || interestedSeedletId === seedlet.id}
                       title={
                         isOwner
                           ? "You cannot show interest in your own Seedlet"
@@ -185,59 +167,33 @@ export default function SeedletsPage() {
                           : "text-black cursor-pointer"
                       }`}
                     >
-                      {interestedSeedletId === seedlet.id ? (
-                        <Loader2
-                          size={16}
-                          className="text-[#6C5DD3] animate-spin"
-                        />
-                      ) : (
-                        <UserPlus
-                          size={16}
-                          className={`${
-                            seedlet.interestedByCurrentUser
-                              ? "fill-[#6C5DD3] text-[#6C5DD3]"
-                              : "text-[#6C5DD3]"
-                          }`}
-                        />
-                      )}
+                      <UserPlus
+                        size={16}
+                        className={`${
+                          seedlet.currentUserHasInterest
+                            ? "fill-[#6C5DD3] text-[#6C5DD3]"
+                            : "text-[#6C5DD3]"
+                        }`}
+                      />
                       {seedlet.interestCount ?? 0}
                     </button>
 
-                    {/* Role Picker */}
-                    {rolePickerSeedletId === seedlet.id && !isOwner && (
-                      <div
-                        className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md p-3 z-10"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <p className="text-sm mb-2 text-gray-600">
-                          Select a role
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          {(seedlet.neededRoles ?? []).map((role: string) => (
-                            <button
-                              key={role}
-                              onClick={() => {
-                                setInterestedSeedletId(seedlet.id);
-                                interestMutation.mutate(
-                                  {
-                                    id: seedlet.id,
-                                    roleInterestedIn: role,
-                                  },
-                                  {
-                                    onSettled: () => {
-                                      setInterestedSeedletId(null);
-                                      setRolePickerSeedletId(null);
-                                    },
-                                  }
-                                );
-                              }}
-                              className="px-3 py-1 rounded-md text-sm bg-[#F3F4F6]  hover:bg-[#42B883] hover:text-white transition text-left cursor-pointer"
-                            >
-                              {role}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    {rolePickerSeedletId === seedlet.id && (
+                      <RolePicker
+                        seedlet={seedlet}
+                        userId={user?.data?.id}
+                        isOwner={isOwner}
+                        isLoading={false}
+                        onClose={() => setRolePickerSeedletId(null)}
+                        onSelectRole={(role) => {
+                          // optimistic handled in mutation
+                          interestMutation.mutate({
+                            id: seedlet.id,
+                            roleInterestedIn: role,
+                          });
+                          setRolePickerSeedletId(null);
+                        }}
+                      />
                     )}
                   </div>
                 </div>

@@ -99,10 +99,14 @@ export default function NewSeedletPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-[#333]">
+              <Label
+                htmlFor="title"
+                className="block text-sm font-medium mb-1 text-[#333]"
+              >
                 Title
-              </label>
+              </Label>
               <Input
+                id="title"
                 {...register("title")}
                 placeholder="AI-Powered Study Buddy"
               />
@@ -115,10 +119,14 @@ export default function NewSeedletPage() {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-[#333]">
+              <Label
+                htmlFor="description"
+                className="block text-sm font-medium mb-1 text-[#333]"
+              >
                 Description
-              </label>
+              </Label>
               <Textarea
+                id="description"
                 {...register("description")}
                 placeholder="Briefly describe your idea, problem it solves, or the goal..."
                 className="min-h-[120px]"
@@ -132,7 +140,10 @@ export default function NewSeedletPage() {
 
             {/* Tags */}
             <div>
-              <Label className="block text-sm font-medium mb-1 text-[#333]">
+              <Label
+                id="tags-label"
+                className="block text-sm font-medium mb-1 text-[#333]"
+              >
                 Tags{" "}
                 <span className="text-gray-500 text-xs">(min 2, max 4)</span>
               </Label>
@@ -140,30 +151,32 @@ export default function NewSeedletPage() {
                 name="tags"
                 control={control}
                 render={({ field }) => (
-                  <MultipleSelector
-                    value={field.value.map((tag: string) => ({
-                      value: tag,
-                      label: tag,
-                    }))}
-                    onChange={(options) =>
-                      field.onChange(
-                        options.map((opt: Option) =>
-                          opt.value.toLowerCase().trim()
+                  <div aria-labelledby="tags-label">
+                    <MultipleSelector
+                      value={field.value.map((tag: string) => ({
+                        value: tag,
+                        label: tag,
+                      }))}
+                      onChange={(options) =>
+                        field.onChange(
+                          options.map((opt: Option) =>
+                            opt.value.toLowerCase().trim()
+                          )
                         )
-                      )
-                    }
-                    options={tagOptions}
-                    placeholder="Select tags"
-                    commandProps={{ label: "Available tags" }}
-                    emptyIndicator={
-                      <p className="text-center text-sm">No tags found</p>
-                    }
-                    maxSelected={4}
-                    onMaxSelected={() =>
-                      toast.error("You can select up to 4 tags only")
-                    }
-                    creatable
-                  />
+                      }
+                      options={tagOptions}
+                      placeholder="Select tags"
+                      commandProps={{ label: "Available tags" }}
+                      emptyIndicator={
+                        <p className="text-center text-sm">No tags found</p>
+                      }
+                      maxSelected={4}
+                      onMaxSelected={() =>
+                        toast.error("You can select up to 4 tags only")
+                      }
+                      creatable
+                    />
+                  </div>
                 )}
               />
               {errors.tags && (
@@ -175,11 +188,15 @@ export default function NewSeedletPage() {
 
             {/* Needed roles */}
             <div>
-              <label className="block text-sm font-medium mb-1 text-[#333]">
+              <Label
+                htmlFor="roles"
+                className="block text-sm font-medium mb-1 text-[#333]"
+              >
                 Who are you looking for?{" "}
-                <span className="text-gray-500 text-xs">(comma-seperated)</span>
-              </label>
+                <span className="text-gray-500 text-xs">(comma-separated)</span>
+              </Label>
               <Input
+                id="roles"
                 {...register("roles")}
                 placeholder="frontend dev, co-founder..."
               />
