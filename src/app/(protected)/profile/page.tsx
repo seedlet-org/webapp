@@ -52,6 +52,7 @@ export default function CurrentUserProfilePage() {
             src={user.image || "/default-avatar.png"}
             alt="Profile picture"
             fill
+            sizes="100px"
             className="rounded-full"
           />
         </div>

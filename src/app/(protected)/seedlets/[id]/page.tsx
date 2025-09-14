@@ -167,7 +167,7 @@ export default function SeedletDetailPage() {
                 <Heart
                   size={18}
                   className="text-[#FF6B6B]"
-                  fill={seedlet.likedByCurrentUser ? "#FF6B6B" : "none"} // Requires the field my chief will add
+                  fill={seedlet.likedByCurrentUser ? "#FF6B6B" : "none"}
                 />
               )}
               {seedlet.likeCount}
@@ -203,7 +203,7 @@ export default function SeedletDetailPage() {
               <UserPlus
                 size={18}
                 className={`${
-                  seedlet.interestedByCurrentUser // ✅ unified
+                  seedlet.currentUserHasInterest
                     ? "fill-[#6C5DD3] text-[#6C5DD3]"
                     : "text-[#6C5DD3]"
                 }`}
@@ -370,7 +370,7 @@ export default function SeedletDetailPage() {
                             <Heart
                               size={14}
                               className={
-                                comment.likedByCurrentUser // Requires the field my chief will add
+                                comment.likedByCurrentUser
                                   ? "fill-[#FF6B6B] text-[#FF6B6B]"
                                   : "text-[#FF6B6B]"
                               }

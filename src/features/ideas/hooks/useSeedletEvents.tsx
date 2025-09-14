@@ -9,47 +9,32 @@ import {
   CommentCache,
 } from "@/types/types";
 
-/**
- * Type guard: check if SSE data is a Like event
- */
+// Type guards (check for type of ongoing event)
 function isLikeEvent(
   data: SSEMessage
 ): data is { ref: "idea"; refId: string; liked: boolean } {
   return "liked" in data;
 }
 
-/**
- * Type guard: check if SSE data is a Comment event
- */
 function isCommentEvent(
   data: SSEMessage
 ): data is { ref: "idea"; refId: string; reply: CommentReply } {
   return "reply" in data;
 }
 
-/**
- * Type guard: check if SSE data is an Interest event
- */
 function isInterestEvent(
   data: SSEMessage
 ): data is { ref: "idea"; refId: string; interested: number } {
   return "interested" in data;
 }
 
-/**
- * Type guard: check if SSE data is a Create event
- */
 function isCreateEvent(
   data: SSEMessage
 ): data is { ref: "idea"; created: Seedlet } {
   return "created" in data;
 }
 
-/**
- * Hook: subscribes to SSE and updates react-query caches
- * - Keeps feed + detail pages in sync with live events
- * - Handles like, comment, interest, and create events
- */
+// Main hook
 export function useSeedletEvents() {
   const queryClient = useQueryClient();
 
@@ -58,7 +43,6 @@ export function useSeedletEvents() {
     let eventSource: EventSource | null = null;
 
     // Apply incoming SSE message to caches
-
     const updateCaches = (data: SSEMessage) => {
       // Handle new idea creation
       if (isCreateEvent(data)) {

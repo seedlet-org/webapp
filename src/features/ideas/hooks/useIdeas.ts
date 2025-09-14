@@ -1,4 +1,3 @@
-// features/ideas/hooks/useIdeas.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getIdeas,
@@ -12,8 +11,8 @@ import {
   replyToComment,
   likeComment,
 } from "../api";
-import { CreateSeedletPayload } from "@/types/types";
-import { FeedCache, DetailCache } from "@/types/types";
+import { Comment, CreateSeedletPayload } from "@/types/types";
+import { FeedCache, DetailCache, CommentCache } from "@/types/types";
 
 // Queries
 export const useIdeas = () => {
@@ -45,6 +44,7 @@ export const useCreateIdea = () => {
   return useMutation({
     mutationFn: (payload: CreateSeedletPayload) => createIdea(payload),
     onSuccess: () => {
+      //Safety fallback just in case
       queryClient.invalidateQueries({ queryKey: ["ideas"] });
     },
   });
@@ -156,11 +156,6 @@ export const useLikeIdea = () => {
         };
       });
     },
-
-    onSettled: (_data, _err, id) => {
-      queryClient.invalidateQueries({ queryKey: ["ideas"] });
-      queryClient.invalidateQueries({ queryKey: ["idea", id] });
-    },
   });
 };
 
@@ -265,11 +260,6 @@ export const useShowInterest = () => {
         };
       });
     },
-
-    onSettled: (_data, _err, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["ideas"] });
-      queryClient.invalidateQueries({ queryKey: ["idea", variables?.id] });
-    },
   });
 };
 
@@ -278,6 +268,7 @@ export const useCommentOnIdea = (id: string) => {
   return useMutation({
     mutationFn: (payload: { comment: string }) => commentOnIdea(id, payload),
     onSuccess: () => {
+      // Safety fallback just in case
       queryClient.invalidateQueries({ queryKey: ["idea", id] });
     },
   });
@@ -290,7 +281,6 @@ export const useReplyToComment = (ideaId: string) => {
     mutationFn: ({ commentId, reply }: { commentId: string; reply: string }) =>
       replyToComment(commentId, { reply }),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["idea", ideaId] });
       queryClient.invalidateQueries({
         queryKey: ["comment", variables.commentId],
       });
@@ -301,8 +291,48 @@ export const useReplyToComment = (ideaId: string) => {
 export const useLikeComment = (ideaId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ targetId }: { parentCommentId: string; targetId: string }) =>
-      likeComment(targetId),
+    mutationFn: ({
+      parentCommentId,
+      targetId,
+    }: {
+      parentCommentId: string;
+      targetId: string;
+    }) => likeComment(targetId),
+
+    onMutate: async ({ parentCommentId, targetId }) => {
+      await queryClient.cancelQueries({ queryKey: ["idea", ideaId] });
+      await queryClient.cancelQueries({
+        queryKey: ["comment", parentCommentId],
+      });
+
+      const previousIdea = queryClient.getQueryData<DetailCache>([
+        "idea",
+        ideaId,
+      ]);
+      const previousComment = queryClient.getQueryData<CommentCache>([
+        "comment",
+        parentCommentId,
+      ]);
+
+      // Update seedlet detail page comments
+      if (previousIdea) {
+        queryClient.setQueryData(["idea", ideaId], {
+          ...previousIdea,
+          comments: previousIdea.comments?.map((comment: Comment) => {
+            comment.id === targetId
+              ? {
+                  ...comment,
+                  likedByCurrentUser: !comment.likedByCurrentUser,
+                  likeCount: comment.likedByCurrentUser
+                    ? comment.likeCount - 1
+                    : comment.likeCount + 1,
+                }
+              : comment;
+          }),
+        });
+      }
+    },
+
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["idea", ideaId] });
       queryClient.invalidateQueries({
