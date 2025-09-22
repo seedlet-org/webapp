@@ -66,6 +66,7 @@ export default function ClientAppLayout({
               alt="Seedlet Logo"
               width={30}
               height={30}
+              sizes="30px"
               className="object-contain"
             />
             <span>Seedlet</span>

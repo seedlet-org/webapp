@@ -12,8 +12,19 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: "Seedlet - Grow Ideas Together",
-  description: "Seedlet is a collaborative platform where ideas sprout into projects. Validate your ideas, invite collaborators, and build together in Labs.",
-  keywords: ["idea validation", "collaborative platform", "startups", "early stage ideas", "Seedlet", "project management", "brainstorming", "side projects", "build in public"],
+  description:
+    "Seedlet is a collaborative platform where ideas sprout into projects. Validate your ideas, invite collaborators, and build together in Labs.",
+  keywords: [
+    "idea validation",
+    "collaborative platform",
+    "startups",
+    "early stage ideas",
+    "Seedlet",
+    "project management",
+    "brainstorming",
+    "side projects",
+    "build in public",
+  ],
 };
 
 export default function RootLayout({
@@ -23,7 +34,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} font-sans`} suppressHydrationWarning>
+      <body
+        className={`${manrope.variable} font-sans`}
+        suppressHydrationWarning
+      >
         <Providers>
           {children}
           <Toaster />

@@ -26,6 +26,7 @@ export default function SeedletLoader() {
           src="/seedlet.png"
           alt="Loading logo"
           fill
+          sizes="40px"
           className="object-contain"
           priority
         />

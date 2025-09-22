@@ -22,12 +22,8 @@ const formSchema = z.object({
   bio: z.string().max(200, "Bio must not exceed 200 characters").optional(),
   country: z.string().optional(),
   state: z.string().optional(),
-  socialLinks: z
-    .object({
-      github: z.string().optional(),
-      linkedin: z.string().optional(),
-    })
-    .optional(),
+  githubUrl: z.string().optional(),
+  linkedinUrl: z.string().optional(),
 });
 
 export default function EditProfilePage() {
@@ -87,8 +83,8 @@ export default function EditProfilePage() {
       if (data.bio) formData.append("bio", data.bio);
       if (data.country) formData.append("country", data.country);
       if (data.state) formData.append("state", data.state);
-      if (data.socialLinks)
-        formData.append("socialLinks", JSON.stringify(data.socialLinks));
+      if (data.githubUrl) formData.append("githubUrl", data.githubUrl);
+      if (data.linkedinUrl) formData.append("linkedinUrl", data.linkedinUrl);
 
       const userId = currentUser.data.id;
 
@@ -121,8 +117,8 @@ export default function EditProfilePage() {
     setBioValue(user.bio || "");
     setValue("country", user.country || "");
     setValue("state", user.state || "");
-    setValue("socialLinks.github", user.socialLinks?.github || "");
-    setValue("socialLinks.linkedin", user.socialLinks?.linkedin || "");
+    setValue("githubUrl", user.githubUrl || "");
+    setValue("linkedinUrl", user.linkedinUrl || "");
 
     if (user.image) setPreviewImage(user.image);
   }, [currentUser, setValue]);
@@ -265,13 +261,13 @@ export default function EditProfilePage() {
                 <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38v-1.34c-2.22.48-2.69-1.07-2.69-1.07a2.12 2.12 0 00-.88-1.16c-.72-.5.05-.49.05-.49a1.7 1.7 0 011.24.84 1.72 1.72 0 002.36.67c.03-.5.3-.85.54-1.05-1.78-.2-3.64-.89-3.64-3.95a3.09 3.09 0 01.82-2.14 2.87 2.87 0 01.08-2.11s.67-.21 2.2.82a7.59 7.59 0 014 0c1.52-1.03 2.2-.82 2.2-.82.43 1.1.16 1.91.08 2.11a3.09 3.09 0 01.82 2.14c0 3.07-1.87 3.75-3.65 3.95.31.27.58.81.58 1.63v2.42c0 .21.15.46.56.38A8 8 0 0016 8c0-4.42-3.58-8-8-8z" />
               </svg>
               <Input
-                {...register("socialLinks.github")}
+                {...register("githubUrl")}
                 placeholder="GitHub URL"
                 className="pl-10"
               />
-              {errors.socialLinks?.github?.message && (
+              {errors.githubUrl?.message && (
                 <p className="text-sm text-red-500 mt-1">
-                  {errors.socialLinks.github.message}
+                  {errors.githubUrl.message}
                 </p>
               )}
             </div>
@@ -289,13 +285,13 @@ export default function EditProfilePage() {
                 <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.49 8.09h3.99V24H.49V8.09zM8.98 8.09h3.83v2.18h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.09V24h-4.01v-7.09c0-1.69-.03-3.87-2.36-3.87-2.36 0-2.72 1.85-2.72 3.75V24H8.98V8.09z" />
               </svg>
               <Input
-                {...register("socialLinks.linkedin")}
+                {...register("linkedinUrl")}
                 placeholder="LinkedIn URL"
                 className="pl-10"
               />
-              {errors.socialLinks?.linkedin?.message && (
+              {errors.linkedinUrl?.message && (
                 <p className="text-sm text-red-500 mt-1">
-                  {errors.socialLinks.linkedin.message}
+                  {errors.linkedinUrl.message}
                 </p>
               )}
             </div>
