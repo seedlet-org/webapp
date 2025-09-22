@@ -51,7 +51,6 @@ export default function SeedletDetailPage() {
   const [newComment, setNewComment] = useState("");
 
   // UI states
-  const [interestOpen, setInterestOpen] = useState(false);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
   const [replyContent, setReplyContent] = useState("");
@@ -60,6 +59,11 @@ export default function SeedletDetailPage() {
   const [likingCommentId, setLikingCommentId] = useState<string | null>(null);
   const { data: activeCommentData, isLoading: activeCommentLoading } =
     useCommentById(activeCommentId);
+
+  // Role picker state
+  const [rolePickerSeedletId, setRolePickerSeedletId] = useState<string | null>(
+    null
+  );
 
   // Comment focus
   useEffect(() => {
@@ -79,9 +83,6 @@ export default function SeedletDetailPage() {
   }
 
   const seedlet: Idea = ideaData.data.idea;
-  const userInterest = seedlet.interests?.find(
-    (i) => String(i.userId) === String(user?.data?.id)
-  );
 
   // Sort top-level comments newest-first
   const comments: Comment[] =
@@ -97,11 +98,6 @@ export default function SeedletDetailPage() {
     await commentOnIdea.mutateAsync({ comment: newComment.trim() });
     setNewComment("");
   };
-
-  // const handleInterest = (role: string) => {
-  //   showInterest.mutate({ id: id as string, roleInterestedIn: role });
-  //   setInterestOpen(false);
-  // };
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 font-manrope">
@@ -157,19 +153,14 @@ export default function SeedletDetailPage() {
           <div className="flex items-center gap-6 text-sm text-[#4F4F4F] relative">
             <button
               onClick={() => likeIdea.mutate(id as string)}
-              disabled={likeIdea.isPending}
               className="flex items-center gap-1 cursor-pointer"
               title="Like"
             >
-              {likeIdea.isPending ? (
-                <span className="animate-spin w-4 h-4 border-2 border-[#FF6B6B] border-t-transparent rounded-full"></span>
-              ) : (
-                <Heart
-                  size={18}
-                  className="text-[#FF6B6B]"
-                  fill={seedlet.likedByCurrentUser ? "#FF6B6B" : "none"}
-                />
-              )}
+              <Heart
+                size={18}
+                className="text-[#FF6B6B]"
+                fill={seedlet.likedByCurrentUser ? "#FF6B6B" : "none"}
+              />
               {seedlet.likeCount}
             </button>
 
@@ -178,57 +169,64 @@ export default function SeedletDetailPage() {
               {seedlet.commentCount}
             </div>
 
-            <button
-              onClick={() => {
-                if (
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (
+                    String(user?.data?.id) ===
+                    String(seedlet.ownerId ?? seedlet.owner?.id)
+                  )
+                    return;
+                  setRolePickerSeedletId(
+                    rolePickerSeedletId === seedlet.id ? null : seedlet.id
+                  );
+                }}
+                title={
                   String(user?.data?.id) ===
                   String(seedlet.ownerId ?? seedlet.owner?.id)
-                )
-                  return;
-                setInterestOpen((prev) => !prev);
-              }}
-              className={`flex items-center gap-1 ${
-                String(user?.data?.id) ===
-                String(seedlet.ownerId ?? seedlet.owner?.id)
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-black cursor-pointer"
-              }`}
-              title={
-                String(user?.data?.id) ===
-                String(seedlet.ownerId ?? seedlet.owner?.id)
-                  ? "You cannot show interest in your own Seedlet"
-                  : "I'm Interested"
-              }
-            >
-              <UserPlus
-                size={18}
-                className={`${
-                  seedlet.currentUserHasInterest
-                    ? "fill-[#6C5DD3] text-[#6C5DD3]"
-                    : "text-[#6C5DD3]"
-                }`}
-              />
-
-              {seedlet.interestCount}
-            </button>
-
-            {/* Role picker */}
-            {interestOpen && (
-              <RolePicker
-                seedlet={seedlet}
-                userId={user?.data?.id}
-                isOwner={String(user?.data?.id) === String(seedlet.ownerId)}
-                isLoading={showInterest.isPending}
-                selectedRole={userInterest?.roleInterestedIn}
-                onSelectRole={(role) =>
-                  showInterest.mutate({
-                    id: id as string,
-                    roleInterestedIn: role,
-                  })
+                    ? "You cannot show interest in your own Seedlet"
+                    : "I'm Interested"
                 }
-                onClose={() => setInterestOpen(false)}
-              />
-            )}
+                disabled={
+                  String(user?.data?.id) ===
+                  String(seedlet.ownerId ?? seedlet.owner?.id)
+                }
+                className={`flex items-center gap-1 ${
+                  String(user?.data?.id) ===
+                  String(seedlet.ownerId ?? seedlet.owner?.id)
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-black cursor-pointer"
+                }`}
+              >
+                <UserPlus
+                  size={18}
+                  className={`${
+                    seedlet.currentUserHasInterest
+                      ? "fill-[#6C5DD3] text-[#6C5DD3]"
+                      : "text-[#6C5DD3]"
+                  }`}
+                />
+                {seedlet.interestCount ?? 0}
+              </button>
+
+              {rolePickerSeedletId === seedlet.id && (
+                <RolePicker
+                  seedlet={seedlet}
+                  userId={user?.data?.id}
+                  isOwner={String(user?.data?.id) === String(seedlet.ownerId)}
+                  isLoading={false}
+                  onClose={() => setRolePickerSeedletId(null)}
+                  onSelectRole={(role) => {
+                    showInterest.mutate({
+                      id: seedlet.id,
+                      roleInterestedIn: role,
+                    });
+                    setRolePickerSeedletId(null);
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           {/* Comment section */}
@@ -349,13 +347,9 @@ export default function SeedletDetailPage() {
                         <button
                           onClick={() => {
                             setLikingCommentId(comment.id);
-                            likeComment.mutate(
-                              {
-                                parentCommentId: comment.id,
-                                targetId: comment.id,
-                              },
-                              { onSettled: () => setLikingCommentId(null) }
-                            );
+                            likeComment.mutate(comment.id, {
+                              onSettled: () => setLikingCommentId(null),
+                            });
                           }}
                           disabled={
                             likingCommentId === comment.id &&

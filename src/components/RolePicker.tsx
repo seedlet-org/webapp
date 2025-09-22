@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { Loader2 } from "lucide-react";
 import useClickOutside from "@/features/ideas/hooks/useClickOutside";
 import { RolePickerProps } from "@/types/types";
 
@@ -9,7 +8,6 @@ export default function RolePicker({
   seedlet,
   userId,
   isOwner,
-  isLoading,
   onSelectRole,
   onClose,
 }: RolePickerProps) {
@@ -34,8 +32,7 @@ export default function RolePicker({
           return (
             <button
               key={role}
-              onClick={() => onSelectRole(role)}
-              disabled={isLoading}
+              onClick={() => onSelectRole(isActive ? "" : role)}
               className={`px-3 py-1 rounded-md text-sm transition text-left cursor-pointer 
                 ${
                   isActive
@@ -43,11 +40,7 @@ export default function RolePicker({
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
             >
-              {isLoading ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                role
-              )}
+              {role}
             </button>
           );
         })}

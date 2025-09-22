@@ -64,12 +64,12 @@ export interface Owner {
 }
 
 export interface Interest {
-  id: string;
-  ideaId: string;
-  userId: string;
-  roleInterestedIn: string;
-  createdAt: string;
-  updatedAt: string;
+  id?: string;
+  ideaId?: string;
+  userId?: string;
+  roleInterestedIn?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Seedlet {
@@ -77,15 +77,13 @@ export interface Seedlet {
   title: string;
   description: string;
   tags: Tag[];
-  interests?: Interest[];
+  interests: Interest[];
   neededRoles: string[];
   ownerId?: string;
   owner?: Owner;
   likeCount: number;
   commentCount: number;
   interestCount: number;
-
-  // My chief will add these
   likedByCurrentUser: boolean;
   currentUserHasInterest: boolean;
 }
@@ -105,6 +103,7 @@ export interface Comment {
   commentCount: number;
   likedByCurrentUser?: boolean;
   createdAt: string;
+  replies?: Reply[];
 }
 
 export type Reply = Comment;
@@ -116,13 +115,11 @@ export interface Idea {
   tags: { id: string; name: string }[];
   ownerId?: string;
   owner?: User;
-  interests?: Interest[];
+  interests: Interest[];
   neededRoles: string[];
   likeCount: number;
   interestCount: number;
   commentCount: number;
-
-  // My chief will add these
   likedByCurrentUser?: boolean;
   currentUserHasInterest: boolean;
 }
@@ -147,21 +144,26 @@ export type RolePickerProps = {
 export type SSEMessage =
   | { ref: "idea"; refId: string; liked: boolean }
   | { ref: "idea"; refId: string; reply: CommentReply }
-  | { ref: "idea"; refId: string; interested: number }
+  | { ref: "idea"; refId: string; interested: boolean }
   | { ref: "idea"; created: Seedlet };
 
 // Comment event type
 export interface CommentReply {
   id: string;
   content: string;
-  ideaId: string;
-  owner: {
-    id: string;
-    username: string;
-  };
+  ownerId?: string;
+  owner?: User;
+  parentId?: string;
+  likeCount: number;
+  commentCount: number;
+  likedByCurrentUser?: boolean;
+  createdAt: string;
+  replies?: CommentReply[];
 }
 
 // React-query caches types
 export type FeedCache = { data: Seedlet[] };
 export type DetailCache = { data: { idea: Seedlet; comments: CommentReply[] } };
 export type CommentCache = { data: { comments: CommentReply[] } };
+
+export type IdeaResponse = { data: { idea: Seedlet } } | Seedlet;

@@ -11,8 +11,14 @@ import {
   replyToComment,
   likeComment,
 } from "../api";
-import { Comment, CreateSeedletPayload } from "@/types/types";
-import { FeedCache, DetailCache, CommentCache } from "@/types/types";
+import {
+  CreateSeedletPayload,
+  FeedCache,
+  DetailCache,
+  Seedlet,
+  Interest,
+} from "@/types/types";
+import { useCurrentUser } from "@/features/user/hooks/useUser";
 
 // Queries
 export const useIdeas = () => {
@@ -127,10 +133,8 @@ export const useLikeIdea = () => {
     },
 
     onSuccess: (data, id) => {
-      const maybeIdea =
-        (data as any)?.data?.idea ?? (data as any)?.idea ?? (data as any);
+      const maybeIdea = "data" in data ? data.data.idea : data;
       if (!maybeIdea || !maybeIdea.id) return;
-
       const normalized = {
         ...maybeIdea,
         likedByCurrentUser: !!maybeIdea.likedByCurrentUser,
@@ -161,6 +165,8 @@ export const useLikeIdea = () => {
 
 export const useShowInterest = () => {
   const queryClient = useQueryClient();
+  const { data: userResp } = useCurrentUser();
+  const currentUserId = userResp?.data?.id;
 
   return useMutation({
     mutationFn: async ({
@@ -180,42 +186,79 @@ export const useShowInterest = () => {
 
       // Seedlet feed optimistic update
       queryClient.setQueryData<FeedCache>(["ideas"], (old) => {
-        if (!old?.data) return old;
+        if (!old?.data || !currentUserId) return old;
         return {
           ...old,
           data: old.data.map((s) => {
             if (s.id !== id) return s;
-            const currently = !!s.currentUserHasInterest;
+            const alreadyInterested = !!s.currentUserHasInterest;
+
+            let updatedInterests: Interest[];
+            if (roleInterestedIn !== "") {
+              // Update interest
+              updatedInterests = [
+                ...(s.interests ?? []).filter(
+                  (i: Interest) => String(i.userId) !== String(currentUserId)
+                ),
+                { userId: currentUserId, roleInterestedIn },
+              ];
+            } else {
+              // Remove interest
+              updatedInterests = (s.interests ?? []).filter(
+                (i: Interest) => String(i.userId) !== String(currentUserId)
+              );
+            }
+
             return {
               ...s,
-              currentUserHasInterest: !currently,
-              interestCount: Math.max(
-                0,
-                (s.interestCount ?? 0) + (currently ? -1 : 1)
-              ),
-            };
+              currentUserHasInterest: roleInterestedIn !== "",
+              interestCount:
+                roleInterestedIn !== "" && !alreadyInterested
+                  ? (s.interestCount ?? 0) + 1
+                  : roleInterestedIn === "" && alreadyInterested
+                  ? Math.max(0, (s.interestCount ?? 0) - 1)
+                  : s.interestCount,
+              interests: updatedInterests,
+            } as Seedlet;
           }),
         };
       });
 
       // Seedlet detail optimistic update
       queryClient.setQueryData<DetailCache>(["idea", id], (old) => {
-        if (!old?.data?.idea) return old;
+        if (!old?.data?.idea || !currentUserId) return old;
         const idea = old.data.idea;
-        const currently = idea.currentUserHasInterest ?? false;
+        const alreadyInterested = !!idea.currentUserHasInterest;
+
+        let updatedInterests: Interest[];
+        if (roleInterestedIn !== "") {
+          updatedInterests = [
+            ...(idea.interests ?? []).filter(
+              (i: Interest) => String(i.userId) !== String(currentUserId)
+            ),
+            { userId: currentUserId, roleInterestedIn },
+          ];
+        } else {
+          updatedInterests = (idea.interests ?? []).filter(
+            (i: Interest) => String(i.userId) !== String(currentUserId)
+          );
+        }
+
         return {
           ...old,
           data: {
             ...old.data,
             idea: {
               ...idea,
-              currentUserHasInterest: !currently,
-              interestCount: Math.max(
-                0,
-                (idea.interestCount ?? 0) + (currently ? -1 : 1)
-              ),
-              roleInterestedIn: !currently ? roleInterestedIn : null,
-            },
+              currentUserHasInterest: roleInterestedIn !== "",
+              interestCount:
+                roleInterestedIn !== "" && !alreadyInterested
+                  ? (idea.interestCount ?? 0) + 1
+                  : roleInterestedIn === "" && alreadyInterested
+                  ? Math.max(0, (idea.interestCount ?? 0) - 1)
+                  : idea.interestCount,
+              interests: updatedInterests,
+            } as Seedlet,
           },
         };
       });
@@ -230,36 +273,8 @@ export const useShowInterest = () => {
         queryClient.setQueryData(["idea", vars.id], ctx.previousIdea);
     },
 
-    onSuccess: (data, variables) => {
-      const maybeIdea =
-        (data as any)?.data?.idea ?? (data as any)?.idea ?? (data as any);
-      if (!maybeIdea || !maybeIdea.id) return;
-
-      const normalized = {
-        ...maybeIdea,
-        currentUserHasInterest: !!maybeIdea.currentUserHasInterest,
-      };
-
-      // Update seedlet feed
-      queryClient.setQueryData<FeedCache>(["ideas"], (old) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: old.data.map((s) =>
-            s.id === normalized.id ? { ...s, ...normalized } : s
-          ),
-        };
-      });
-
-      // Update seedlet detail
-      queryClient.setQueryData<DetailCache>(["idea", variables.id], (old) => {
-        if (!old?.data?.idea) return old;
-        return {
-          ...old,
-          data: { ...old.data, idea: { ...old.data.idea, ...normalized } },
-        };
-      });
-    },
+    // I've made it so SSE handles this
+    onSuccess: () => {},
   });
 };
 
@@ -281,6 +296,7 @@ export const useReplyToComment = (ideaId: string) => {
     mutationFn: ({ commentId, reply }: { commentId: string; reply: string }) =>
       replyToComment(commentId, { reply }),
     onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["idea", ideaId] });
       queryClient.invalidateQueries({
         queryKey: ["comment", variables.commentId],
       });
@@ -290,54 +306,13 @@ export const useReplyToComment = (ideaId: string) => {
 
 export const useLikeComment = (ideaId: string) => {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: ({
-      parentCommentId,
-      targetId,
-    }: {
-      parentCommentId: string;
-      targetId: string;
-    }) => likeComment(targetId),
+    mutationFn: async (commentId: string) => likeComment(commentId),
 
-    onMutate: async ({ parentCommentId, targetId }) => {
-      await queryClient.cancelQueries({ queryKey: ["idea", ideaId] });
-      await queryClient.cancelQueries({
-        queryKey: ["comment", parentCommentId],
-      });
-
-      const previousIdea = queryClient.getQueryData<DetailCache>([
-        "idea",
-        ideaId,
-      ]);
-      const previousComment = queryClient.getQueryData<CommentCache>([
-        "comment",
-        parentCommentId,
-      ]);
-
-      // Update seedlet detail page comments
-      if (previousIdea) {
-        queryClient.setQueryData(["idea", ideaId], {
-          ...previousIdea,
-          comments: previousIdea.comments?.map((comment: Comment) => {
-            comment.id === targetId
-              ? {
-                  ...comment,
-                  likedByCurrentUser: !comment.likedByCurrentUser,
-                  likeCount: comment.likedByCurrentUser
-                    ? comment.likeCount - 1
-                    : comment.likeCount + 1,
-                }
-              : comment;
-          }),
-        });
-      }
-    },
-
-    onSuccess: (_data, variables) => {
+    onSuccess: (_data, commentId) => {
       queryClient.invalidateQueries({ queryKey: ["idea", ideaId] });
-      queryClient.invalidateQueries({
-        queryKey: ["comment", variables.parentCommentId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["comment", commentId] });
     },
   });
 };

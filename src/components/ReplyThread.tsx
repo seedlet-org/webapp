@@ -14,7 +14,6 @@ import { ReplyThreadProps } from "@/types/types";
 export default function ReplyThread({
   reply,
   ideaId,
-  parentId,
   depth = 0,
 }: ReplyThreadProps) {
   const { data: user } = useCurrentUser();
@@ -82,10 +81,9 @@ export default function ReplyThread({
         <button
           onClick={() => {
             setLikingCommentId(reply.id);
-            likeComment.mutate(
-              { parentCommentId: parentId, targetId: reply.id },
-              { onSettled: () => setLikingCommentId(null) }
-            );
+            likeComment.mutate(reply.id, {
+              onSettled: () => setLikingCommentId(null),
+            });
           }}
           disabled={likingCommentId === reply.id && likeComment.isPending}
           className="flex items-center gap-1 hover:text-[#42B883] cursor-pointer disabled:opacity-50"

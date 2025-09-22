@@ -1,4 +1,3 @@
-// app/(your-route)/seedlets/page.tsx (or wherever your feed lives)
 "use client";
 
 import Link from "next/link";
@@ -116,7 +115,6 @@ export default function SeedletsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      // optimistic toggle handled in mutation
                       likeMutation.mutate(seedlet.id);
                     }}
                     title="Like"
@@ -186,7 +184,6 @@ export default function SeedletsPage() {
                         isLoading={false}
                         onClose={() => setRolePickerSeedletId(null)}
                         onSelectRole={(role) => {
-                          // optimistic handled in mutation
                           interestMutation.mutate({
                             id: seedlet.id,
                             roleInterestedIn: role,
