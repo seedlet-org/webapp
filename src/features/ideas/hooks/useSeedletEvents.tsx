@@ -14,7 +14,7 @@ import { useCurrentUser } from "@/features/user/hooks/useUser";
 // Type guards
 function isLikeEvent(
   data: SSEMessage
-): data is { ref: "idea"; refId: string; liked: boolean } {
+): data is { ref: "idea"; refId: string; liked: boolean; actorId: string } {
   return "liked" in data;
 }
 function isCommentEvent(
@@ -22,9 +22,12 @@ function isCommentEvent(
 ): data is { ref: "idea"; refId: string; reply: CommentReply } {
   return "reply" in data;
 }
-function isInterestEvent(
-  data: SSEMessage
-): data is { ref: "idea"; refId: string; interested: boolean } {
+function isInterestEvent(data: SSEMessage): data is {
+  ref: "idea";
+  refId: string;
+  interested: boolean;
+  actorId: string;
+} {
   return "interested" in data;
 }
 function isCreateEvent(
@@ -78,12 +81,15 @@ export function useSeedletEvents() {
 
         if (isLikeEvent(data)) {
           const currentlyLiked = idea.likedByCurrentUser ?? false;
-          updated.likedByCurrentUser = data.liked;
           if (currentlyLiked !== data.liked) {
             updated.likeCount = Math.max(
               0,
               (idea.likeCount ?? 0) + (data.liked ? 1 : -1)
             );
+          }
+
+          if (data.actorId === currentUserId) {
+            updated.likedByCurrentUser = data.liked;
           }
         }
 
@@ -139,12 +145,15 @@ export function useSeedletEvents() {
 
           if (isLikeEvent(data)) {
             const currentlyLiked = s.likedByCurrentUser ?? false;
-            item.likedByCurrentUser = data.liked;
             if (currentlyLiked !== data.liked) {
               item.likeCount = Math.max(
                 0,
                 (s.likeCount ?? 0) + (data.liked ? 1 : -1)
               );
+            }
+
+            if (data.actorId === currentUserId) {
+              item.likedByCurrentUser = data.liked;
             }
           }
 
